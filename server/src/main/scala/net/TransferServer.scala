@@ -1,16 +1,11 @@
 package se.nullable.kth.id1212.fileserver.server.net
 
 import java.net.{InetSocketAddress, SocketAddress}
-import java.nio.charset.Charset
 import java.nio.{ByteBuffer, CharBuffer}
-import java.nio.channels.{
-  Channels,
-  FileChannel,
-  ServerSocketChannel,
-  SocketChannel
-}
+import java.nio.channels.{FileChannel, ServerSocketChannel, SocketChannel}
+import java.nio.charset.Charset
 import java.nio.file.{Files, StandardOpenOption}
-import java.util.{Scanner, UUID}
+import java.util.UUID
 
 import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration._
@@ -98,11 +93,7 @@ class TransferServer @Inject()(implicit fileManager: FileManager,
     }
 
     override def run(): Unit =
-      for {
-        _ <- managed(sock)
-        // scanner <- managed(new Scanner(Channels.newInputStream(sock), "UTF-8"))
-      } {
-        // val ticketId = scanner.nextLine()
+      for (_ <- managed(sock)) {
         val ticketId = readLine()
         val ticket = awaitDB(
           fileManager.consumeTicket(TicketID(UUID.fromString(ticketId)))).get
