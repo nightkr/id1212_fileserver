@@ -53,9 +53,9 @@ class TUI(manager: FileServerManager, transferClient: TransferClient) {
       case Array("register", _*) =>
         println("Usage: register <username> <password>")
 
-      case Array("upload") =>
+      case Array("upload" | "ul") =>
         println("Usage: upload <file>")
-      case Array("upload", pathStr @ _*) =>
+      case Array("upload" | "ul", pathStr @ _*) =>
         (for {
           fs <- fileServerEither
           path <- Some(Paths.get(pathStr.mkString(" ")))
@@ -65,6 +65,39 @@ class TUI(manager: FileServerManager, transferClient: TransferClient) {
         } yield
           transferClient.upload(manager.transferServerAddr, ticket, path)).left
           .foreach(println)
+
+      case Array("download" | "dl") =>
+        println("Usage: download <file>")
+      case Array("download" | "dl", pathStr @ _*) =>
+        (for {
+          fs <- fileServerEither
+          path = Paths.get(pathStr.mkString(" "))
+          ticket <- fs.downloadFile(path.getFileName.toString())
+        } yield
+          transferClient.download(manager.transferServerAddr, ticket, path)).left
+          .foreach(println)
+
+      case Array("rm") =>
+        println("Usage: rm <file>")
+      case Array("rm", pathStr @ _*) =>
+        (for {
+          fs <- fileServerEither
+          _ <- fs.deleteFile(pathStr.mkString(" "))
+        } yield ()).left.foreach(println)
+
+      case Array("ls") =>
+        (for (fs <- fileServerEither)
+          yield fs.listFiles().foreach(println)).left.foreach(println)
+
+      case Array("chmod", perms, pathStr @ _*) =>
+        (for {
+          fs <- fileServerEither
+          _ <- fs.setPermissions(pathStr.mkString(" "),
+                                 publicRead = perms.contains('r'),
+                                 publicWrite = perms.contains('w'))
+        } yield ()).left.foreach(println)
+      case Array("chmod", _*) =>
+        println("Usage: chmod [r][w] <file>")
 
       case _ =>
         println("Invalid command -- run help for some advice")

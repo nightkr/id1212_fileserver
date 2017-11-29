@@ -12,7 +12,7 @@ import scala.concurrent.duration._
 
 import javax.inject.{Inject, Singleton}
 import resource._
-import se.nullable.kth.id1212.fileserver.common.controller.TicketID
+import se.nullable.kth.id1212.fileserver.common.model.TicketID
 import se.nullable.kth.id1212.fileserver.server.model.{
   FSProfile,
   FileManager,
@@ -69,9 +69,7 @@ class TransferServer @Inject()(implicit fileManager: FileManager,
       val hash = try {
         for (targetChan <- managed(
                FileChannel.open(target, StandardOpenOption.WRITE))) {
-          println((sock, buf))
           while (sock.read(buf) != -1) {
-            println(buf)
             buf.flip()
             targetChan.write(buf)
             buf.compact()

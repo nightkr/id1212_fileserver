@@ -3,28 +3,22 @@ package se.nullable.kth.id1212.fileserver.server.controller
 import java.net.SocketAddress
 import java.rmi.RemoteException
 import java.rmi.server.UnicastRemoteObject
-import javax.inject.Named
 
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import resource._
 
-import javax.inject.Inject
+import javax.inject.{Inject, Named}
 import se.nullable.kth.id1212.fileserver.common.controller.{
   FileEventListener,
   FileServer,
-  FileServerManager,
-  TicketID
+  FileServerManager
 }
-import se.nullable.kth.id1212.fileserver.server.model.FileManager
-import se.nullable.kth.id1212.fileserver.server.model.{
-  FSProfile,
-  User,
-  UserManager
-}
+import se.nullable.kth.id1212.fileserver.common.model.FileInfo
+import se.nullable.kth.id1212.fileserver.common.model.TicketID
+import se.nullable.kth.id1212.fileserver.server.model.{User, UserManager}
 import se.nullable.kth.id1212.fileserver.server.model.FSProfile.api._
-import slick.basic.DatabaseConfig
+import se.nullable.kth.id1212.fileserver.server.model.FileManager
 
 object Utils {
   def logErrors[A](f: => A): A =
@@ -79,6 +73,44 @@ class LoggedInController(user: User, fileManager: FileManager, db: Database)
       } yield ticket).transactionally.asTry.map(_.toEither.left.map(_ =>
         "You do not have access to that file"))
       Await.result(db.run(ticket), 2.seconds)
+    }
+
+  override def downloadFile(name: String): Either[String, TicketID] =
+    Utils.logErrors {
+      val ticket = (for {
+        file <- fileManager.find(user, name).map(_.get)
+        ticket <- fileManager
+          .createTicket(user, file, upload = false)
+          .map(_.get)
+      } yield ticket).transactionally.asTry.map(_.toEither.left.map(_ =>
+        "You do not have access to that file"))
+      Await.result(db.run(ticket), 2.seconds)
+    }
+
+  override def deleteFile(name: String): Either[String, Unit] =
+    Utils.logErrors {
+      val delete = fileManager
+        .delete(user, name)
+        .asTry
+        .map(_.toEither.left.map(_ => "You do not have access to that file"))
+      Await.result(db.run(delete), 2.seconds)
+    }
+
+  override def listFiles(): Seq[FileInfo] = Utils.logErrors {
+    val files = fileManager.all(user)
+    Await.result(db.run(files), 2.seconds)
+  }
+
+  override def setPermissions(name: String,
+                              publicRead: Boolean,
+                              publicWrite: Boolean): Either[String, Unit] =
+    Utils.logErrors {
+      val update =
+        fileManager
+          .setFileAccess(user, name, publicRead, publicWrite)
+          .asTry
+          .map(_.toEither.left.map(_ => "You do not have access to that file"))
+      Await.result(db.run(update), 2.seconds)
     }
 
   override def addEventListener(listener: FileEventListener): Unit = ???
