@@ -1,13 +1,16 @@
 package se.nullable.kth.id1212.fileserver.server
 
+import java.net.SocketAddress
 import java.rmi.{ConnectException, NotBoundException}
 import java.rmi.registry.{LocateRegistry, Registry}
 
 import com.google.inject.{Binder, Guice, Module, Provides}
-import javax.inject.Singleton
+import javax.inject.{Named, Singleton}
+import scala.concurrent.ExecutionContext
 import se.nullable.kth.id1212.fileserver.common.controller.FileServerCompanion
 import se.nullable.kth.id1212.fileserver.server.controller.ManagerController
 import se.nullable.kth.id1212.fileserver.server.model.{DBManager, FSProfile}
+import se.nullable.kth.id1212.fileserver.server.net.TransferServer
 import slick.basic.DatabaseConfig
 
 import org.h2.tools.{Server => H2Server}
@@ -59,6 +62,10 @@ class ServerModule extends Module {
   @Singleton
   def db(config: DatabaseConfig[FSProfile]): FSProfile.api.Database = config.db
 
-  def configure(binder: Binder): Unit = {
-  }
+  @Provides
+  @Named("transferServer")
+  def transferServerAddr(ts: TransferServer): SocketAddress = ts.address
+
+  def configure(binder: Binder): Unit =
+    binder.bind(classOf[ExecutionContext]).toInstance(ExecutionContext.global)
 }

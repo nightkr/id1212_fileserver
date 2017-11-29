@@ -17,17 +17,24 @@ lazy val sharedSettings = Seq(
 
 lazy val common = project.settings(sharedSettings: _*)
 
-lazy val server = project.settings(sharedSettings: _*).dependsOn(common).settings(
-  libraryDependencies ++= Seq(
-    "com.typesafe.slick" %% "slick" % "3.2.1",
-    "com.typesafe.slick" %% "slick-hikaricp" % "3.2.1",
-    "org.postgresql" % "postgresql" % "42.1.4",
-    "com.h2database" % "h2" % "1.4.196"
+lazy val server = project
+  .settings(sharedSettings: _*)
+  .dependsOn(common)
+  .settings(
+    libraryDependencies ++= Seq(
+      "com.typesafe.slick" %% "slick" % "3.2.1",
+      "com.typesafe.slick" %% "slick-hikaricp" % "3.2.1",
+      "org.postgresql" % "postgresql" % "42.1.4",
+      "com.h2database" % "h2" % "1.4.196",
+      "commons-codec" % "commons-codec" % "1.11"
+    )
   )
-)
 
-lazy val client = project.settings(sharedSettings: _*).dependsOn(common).settings(
-  connectInput in run := true
-)
+lazy val client = project
+  .settings(sharedSettings: _*)
+  .dependsOn(common)
+  .settings(
+    connectInput in run := true
+  )
 
 lazy val root = project.in(file(".")).aggregate(common, server, client)

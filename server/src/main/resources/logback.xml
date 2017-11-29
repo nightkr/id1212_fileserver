@@ -15,5 +15,5 @@
   
   <logger name="slick" level="info"/>
   <logger name="com.zaxxer.hikari" level="info"/>
-  <logger name="slick.jdbc.JdbcBackend.statement" level="debug"/>
+  <!-- <logger name="slick.jdbc.JdbcBackend.statement" level="debug"/> -->
 </configuration>
