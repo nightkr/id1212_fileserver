@@ -35,6 +35,7 @@ class ManagerController @Inject()(
     userManager: UserManager,
     db: Database,
     fileManager: FileManager,
+    notifier: Notifier,
     @Named("transferServer")
     override val transferServerAddr: SocketAddress)
     extends UnicastRemoteObject
@@ -47,7 +48,8 @@ class ManagerController @Inject()(
           .map(userManager.verifyPassword(_, password))
           .getOrElse(false)
       } yield user.filter(_ => success)
-      val ctrl = user.map(_.map(new LoggedInController(_, fileManager, db)))
+      val ctrl =
+        user.map(_.map(new LoggedInController(_, fileManager, db, notifier)))
       Await.result(db.run(ctrl), 2.seconds)
     }
 
@@ -62,7 +64,10 @@ class ManagerController @Inject()(
     }
 }
 
-class LoggedInController(user: User, fileManager: FileManager, db: Database)
+class LoggedInController(user: User,
+                         fileManager: FileManager,
+                         db: Database,
+                         notifier: Notifier)
     extends UnicastRemoteObject
     with FileServer {
   override def uploadFile(name: String): Either[String, TicketID] =
@@ -113,6 +118,24 @@ class LoggedInController(user: User, fileManager: FileManager, db: Database)
       Await.result(db.run(update), 2.seconds)
     }
 
-  override def addEventListener(listener: FileEventListener): Unit = ???
-  override def removeEventListener(listener: FileEventListener): Unit = ???
+  override def addEventListener(
+      name: String,
+      listener: FileEventListener): Either[String, Unit] = Utils.logErrors {
+    val addListener = (for {
+      file <- fileManager.find(user, name).map(_.get)
+      if file.owner == user.id
+    } yield notifier.addListener(file, listener)).asTry
+      .map(_.toEither.left.map(_ => "You do not own that file"))
+    Await.result(db.run(addListener), 2.seconds)
+  }
+  override def removeEventListener(
+      name: String,
+      listener: FileEventListener): Either[String, Unit] = Utils.logErrors {
+    val removeListener = (for {
+      file <- fileManager.find(user, name).map(_.get)
+      if file.owner == user.id
+    } yield notifier.removeListener(file, listener)).asTry
+      .map(_.toEither.left.map(_ => "You do not own that file"))
+    Await.result(db.run(removeListener), 2.seconds)
+  }
 }

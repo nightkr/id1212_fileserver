@@ -4,7 +4,13 @@ import java.net.SocketAddress
 import java.rmi.{Remote, RemoteException}
 import se.nullable.kth.id1212.fileserver.common.model.{FileInfo, TicketID}
 
-trait FileEventListener extends Remote
+trait FileEventListener extends Remote {
+  @throws[RemoteException]
+  def fileRead(username: String): Unit
+
+  @throws[RemoteException]
+  def fileModified(username: String): Unit
+}
 
 trait FileServer extends Remote {
   @throws[RemoteException]
@@ -25,10 +31,12 @@ trait FileServer extends Remote {
                      publicWrite: Boolean): Either[String, Unit]
 
   @throws[RemoteException]
-  def addEventListener(listener: FileEventListener): Unit
+  def addEventListener(name: String,
+                       listener: FileEventListener): Either[String, Unit]
 
   @throws[RemoteException]
-  def removeEventListener(listener: FileEventListener): Unit
+  def removeEventListener(name: String,
+                          listener: FileEventListener): Either[String, Unit]
 }
 
 trait FileServerManager extends Remote {

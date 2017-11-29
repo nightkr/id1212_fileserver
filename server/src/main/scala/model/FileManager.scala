@@ -13,11 +13,22 @@ class FileManager @Inject()(fileStore: FileStore) {
     Files
       .filter(f => f.owner === user.id || f.publicRead || f.publicWrite)
 
+  private def ownedBy(user: User) =
+    Files.filter(f => f.owner === user.id)
+
   def find(user: User, name: String): DBIO[Option[File]] =
     visibleFor(user)
       .filter(_.name === name)
       .result
       .headOption
+
+  def owns(user: User, name: String)(
+      implicit ec: ExecutionContext): DBIO[Boolean] =
+    ownedBy(user)
+      .filter(_.name === name)
+      .result
+      .headOption
+      .map(_.isDefined)
 
   def findByTicket(ticket: Ticket): DBIO[File] =
     Files.filter(_.id === ticket.file).result.head
@@ -51,8 +62,7 @@ class FileManager @Inject()(fileStore: FileStore) {
 
   def delete(user: User, name: String)(
       implicit ec: ExecutionContext): DBIO[Unit] =
-    Files
-      .filter(_.owner === user.id)
+    ownedBy(user)
       .filter(_.name === name)
       .delete
       .filter(_ == 1)
@@ -71,8 +81,7 @@ class FileManager @Inject()(fileStore: FileStore) {
       name: String,
       publicRead: Boolean,
       publicWrite: Boolean)(implicit ec: ExecutionContext): DBIO[Unit] =
-    Files
-      .filter(_.owner === user.id)
+    ownedBy(user)
       .filter(_.name === name)
       .map(f => (f.publicRead, f.publicWrite))
       .update((publicRead, publicWrite))
