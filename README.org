@@ -1,0 +1,37 @@
+* Organization
+
+- common contains common interface definitions
+- server contains the server
+- client contains the client
+
+* Running
+
+To start the client, run:
+
+#+BEGIN_SRC bash
+$ ./sbt client/run
+#+END_SRC
+
+For some example commands, run "help".
+
+To start the server, run:
+
+#+BEGIN_SRC bash
+$ ./sbt server/run
+#+END_SRC
+
+You can also have the server automatically restart on code changes, by running:
+
+#+BEGIN_SRC bash
+$ ./sbt "~; scalafmt; server/reStart"
+#+END_SRC
+
+Explanation:
+
+- ~ runs the following commands every time a file changes
+- scalafmt reformats the code to follow the project style
+- reStart (re)starts the server in a background process
+
+** Windows
+
+If you're on Windows, install SBT from [[https://www.scala-sbt.org/download.html]], and run sbt instead of ./sbt.
