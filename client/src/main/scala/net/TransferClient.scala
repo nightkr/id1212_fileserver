@@ -44,6 +44,6 @@ class TransferClient {
         file.write(buf)
         buf.compact()
       }
-      println("Done uploading")
+      println("Done downloading")
     }
 }

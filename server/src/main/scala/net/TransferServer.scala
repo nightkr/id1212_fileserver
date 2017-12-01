@@ -13,11 +13,13 @@ import scala.concurrent.duration._
 import javax.inject.{Inject, Singleton}
 import resource._
 import se.nullable.kth.id1212.fileserver.common.model.TicketID
+import se.nullable.kth.id1212.fileserver.server.controller.Notifier
 import se.nullable.kth.id1212.fileserver.server.model.{
   FSProfile,
   FileManager,
   FileStore,
-  Ticket
+  Ticket,
+  User
 }
 import FSProfile.api._
 
@@ -25,7 +27,8 @@ import FSProfile.api._
 class TransferServer @Inject()(implicit fileManager: FileManager,
                                fileStore: FileStore,
                                executionContext: ExecutionContext,
-                               db: Database) {
+                               db: Database,
+                               notifier: Notifier) {
   private val serverSocket = ServerSocketChannel.open()
 
   private def awaitDB[A](dbio: DBIO[A]): A =
@@ -93,7 +96,7 @@ class TransferServer @Inject()(implicit fileManager: FileManager,
     override def run(): Unit =
       for (_ <- managed(sock)) {
         val ticketId = readLine()
-        val ticket = awaitDB(
+        val (ticket, file, user) = awaitDB(
           fileManager.consumeTicket(TicketID(UUID.fromString(ticketId)))).get
 
         if (ticket.upload) {
@@ -101,6 +104,7 @@ class TransferServer @Inject()(implicit fileManager: FileManager,
         } else {
           handleDownload(ticket)
         }
+        notifier.sendNotification(file, user, modified = ticket.upload)
       }
   }
 

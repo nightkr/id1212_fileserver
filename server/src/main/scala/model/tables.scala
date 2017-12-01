@@ -36,7 +36,7 @@ case class File(id: Long,
                 publicRead: Boolean,
                 publicWrite: Boolean)
 
-case class Ticket(id: UUID, file: Long, upload: Boolean)
+case class Ticket(id: UUID, file: Long, user: Long, upload: Boolean)
 
 private class Users(tag: Tag) extends Table[User](tag, "USERS") {
   def id = column[Long]("ID", O.PrimaryKey, O.AutoInc)
@@ -63,11 +63,13 @@ private class Files(tag: Tag) extends Table[File](tag, "FILES") {
 private class Tickets(tag: Tag) extends Table[Ticket](tag, "TICKETS") {
   def id = column[UUID]("ID", O.PrimaryKey)
   def file = column[Long]("FILE")
+  def user = column[Long]("USER")
   def upload = column[Boolean]("UPLOAD")
 
   def fileFk = foreignKey("FILE_FK", file, Files)(_.id)
+  def userFk = foreignKey("USER_FK", user, Users)(_.id)
 
-  override def * = (id, file, upload) <> (Ticket.tupled, Ticket.unapply)
+  override def * = (id, file, user, upload) <> (Ticket.tupled, Ticket.unapply)
 }
 
 private object Users extends TableQuery[Users](new Users(_))

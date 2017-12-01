@@ -92,17 +92,24 @@ class FileManager @Inject()(fileStore: FileStore) {
       implicit ec: ExecutionContext): DBIO[Option[TicketID]] =
     if (user.id == file.owner || (!upload && file.publicRead) || (upload && file.publicWrite)) {
       val id = UUID.randomUUID()
-      (Tickets += Ticket(id = id, file = file.id, upload = upload))
+      (Tickets += Ticket(id = id,
+                         file = file.id,
+                         user = user.id,
+                         upload = upload))
         .map(_ => Some(TicketID(id)))
     } else
       DBIO.successful(None)
 
   def consumeTicket(id: TicketID)(
-      implicit ec: ExecutionContext): DBIO[Option[Ticket]] = {
+      implicit ec: ExecutionContext): DBIO[Option[(Ticket, File, User)]] = {
     val query = Tickets.filter(_.id === id.id)
     for {
-      ticket <- query.forUpdate.result.headOption
+      info <- (for {
+        ticket <- query.forUpdate
+        file <- ticket.fileFk
+        user <- ticket.userFk
+      } yield (ticket, file, user)).result.headOption
       _ <- query.delete
-    } yield ticket
+    } yield info
   }.transactionally
 }

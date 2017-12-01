@@ -99,6 +99,15 @@ class TUI(manager: FileServerManager, transferClient: TransferClient) {
       case Array("chmod", _*) =>
         println("Usage: chmod [r][w] <file>")
 
+      case Array("listen") =>
+        println("Usage: listen <file>")
+      case Array("listen", pathStr @ _*) =>
+        val path = pathStr.mkString(" ")
+        (for {
+          fs <- fileServerEither
+          _ <- fs.addEventListener(path, new TUIEventListener(path))
+        } yield ()).left.foreach(println)
+
       case _ =>
         println("Invalid command -- run help for some advice")
     }
