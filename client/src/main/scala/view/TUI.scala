@@ -97,7 +97,7 @@ class TUI(manager: FileServerManager, transferClient: TransferClient) {
                                  publicWrite = perms.contains('w'))
         } yield ()).left.foreach(println)
       case Array("chmod", _*) =>
-        println("Usage: chmod [r][w] <file>")
+        println("Usage: chmod [r][w][-] <file>")
 
       case Array("listen") =>
         println("Usage: listen <file>")
@@ -113,12 +113,23 @@ class TUI(manager: FileServerManager, transferClient: TransferClient) {
     }
 
   private def printHelp(): Unit =
-    println("""
+    println(
+      """
 Available commands:
+
 quit -- Quit
 help -- Print this message
 login <username> <password> -- Log in
 logout -- Log out
 register <username> <password> -- Register
+
+upload <file> -- Uploads a file to the server
+download <file> -- Downloads a file from the server
+rm <file> -- Removes a file from the server
+ls -- List all files you have access to
+chmod [r][w][-] <file> -- Sets the access flags of a file, r = publicly readable, w = writeable, - = none (multiple allowed)
+
+listen <file> -- Listen for changes to a file
+
 """.trim())
 }
