@@ -23,7 +23,6 @@ class Notifier {
 
   def sendNotification(file: File, user: User, modified: Boolean): Unit =
     synchronized {
-      println(listeners)
       for (listener <- listeners(file.id)) {
         try {
           if (modified) {
